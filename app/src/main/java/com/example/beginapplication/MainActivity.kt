@@ -1,46 +1,39 @@
 package com.example.beginapplication
 
+
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
+import com.jakewharton.rxbinding2.widget.RxTextView
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 private val disposeBag = CompositeDisposable()
+
+    @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val list: List<String> = listOf("one", "two", "three", "four", "five")
+        val list = Observable.just("one", "two", "three", "four", "five")
 
-        val dispose = Observable.just(list)
-            .flatMapIterable { it }
-            .scan { t1: String?, t2: String? -> "$t1, $t2"}
-            .subscribeOn(Schedulers.newThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                text.text = it
-            }, {
-
-            })
-
-
-//        val dispose = Observable.just("Алексей", "Владимир", "Грегорий", "Дмитрий", "Евгений")
-//            .scan { t1: String, t2: String -> "$t1 $t2" }
+//        val disposes = Observable.just(list)
+//            .flatMapIterable { it }
+//            .scan { t1: String?, t2: String? -> "$t1, $t2"}
 //            .subscribeOn(Schedulers.newThread())
 //            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe({
-//                println(it)
-//            },{
-//
-//            })
-//
-//
-//        disposeBag.addAll(dispose)
+//            .subscribe({})
+
+       RxTextView.textChanges(editText)
+           .debounce(300, TimeUnit.MILLISECONDS)
+           .skip(3)
+           .subscribe { Log.e("TAG", it.toString()) }
     }
 
     override fun onDestroy() {
