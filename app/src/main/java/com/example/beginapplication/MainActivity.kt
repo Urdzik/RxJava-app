@@ -12,13 +12,15 @@ import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
 
 class MainActivity : AppCompatActivity() {
-private val disposeBag = CompositeDisposable()
+    private val disposeBag = CompositeDisposable()
 
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
+        // TODO Возвращать стрим в метод
         val bool1 = Flowable.just(false, false, false, false, true, true)
         val bool2 = Flowable.just(true, false, false, true, false, false)
 
@@ -26,25 +28,25 @@ private val disposeBag = CompositeDisposable()
 
 
         bool1.withLatestFrom(bool2, BiFunction<Boolean, Boolean, Boolean> { t1, t2 -> t1 && t2 })
-            .doAfterNext { voidFun() }.onErrorReturnItem(false)
-            .switchMap { item -> return@switchMap if (item) {
-                    Flowable.create({ sub ->
-                        num.filter { number -> number % 2 == 0 }.take(1)
-                            .subscribeOn(Schedulers.computation())
-                            .map { (1.0 / it).toString() }.subscribe(
-                                {
-                                    sub.onNext(it)
-                                }, { error ->
-                                    Log.e("TAG", error.localizedMessage)
-                                })
-                    }, BackpressureStrategy.MISSING)
-                } else Flowable.just("") }
+            .doAfterNext { voidFun() }
+            .onErrorReturnItem(false)
+            .switchMap { item ->
+                return@switchMap if (item) {
+                    num.takeUntil{0 == it % 2}
+                        .subscribeOn(Schedulers.computation())
+                        .map { "${1.0 / it}" }
+
+                } else {Flowable.just("")} }
             .observeOn(Schedulers.newThread())
             .doOnNext {
                 println("Ура ${Thread.currentThread().name}")
             }
             .subscribeOn(Schedulers.io())
-            .subscribe { }
+            .subscribe ({
+                println(it)
+            },{
+                println(it.printStackTrace())
+            })
 
     }
 
@@ -55,6 +57,7 @@ private val disposeBag = CompositeDisposable()
 
     fun voidFun() {}
 }
+
 
 
 
