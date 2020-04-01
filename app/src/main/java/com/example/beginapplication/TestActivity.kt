@@ -12,7 +12,7 @@ import io.reactivex.observers.DisposableObserver
 import java.util.concurrent.TimeUnit
 
 
-class Rx : AppCompatActivity() {
+class TestActivity : AppCompatActivity() {
     val TAG = "TAG"
 
 
@@ -62,7 +62,6 @@ class Rx : AppCompatActivity() {
             }
 
         }
-
 
         observable.subscribe(iObserver)
 
