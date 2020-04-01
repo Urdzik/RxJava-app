@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 import io.reactivex.observers.DisposableObserver
+import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
 
@@ -22,48 +23,39 @@ class TestActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val observable = Observable.just("one", 2 , true, 1.3)
+        val observableOfNumber = Observable.range(0, 1000).zipWith(Observable.interval(10, TimeUnit.MILLISECONDS), BiFunction<Int, Any, Int>{t1, t2 -> t1 })
 
 
 
-//        val observer = object : DisposableObserver<Int>() {
-//            override fun onComplete() {
-//                Log.i(TAG, "Observable is complete")
-//            }
-//
-//            override fun onNext(t: Int) {
-//               Log.i(TAG, "$t")
-//            }
-//
-//            override fun onError(e: Throwable) {
-//                Log.e(TAG, e.localizedMessage)
-//            }
-//        }
+
+
+
+
+
+        val subject = PublishSubject.create<Any>()
+        observableOfNumber.subscribe(subject)
 //
 //
 //        observable.subscribe(observer)
 
-//        Handler().postDelayed({
-//            Log.e(TAG, "Observer is dispose")
-//                observer.dispose()
-//            }, 10000)
+        Handler().postDelayed({
+            Log.e(TAG, "Observer one start")
+                subject.subscribe{
+                    Log.i(TAG, it.toString())
+                }
+            }, 40)
+
+        Handler().postDelayed({
+            Log.e(TAG, "Observer two start")
+                subject.subscribe {
+                    Log.i(TAG, it.toString())
+                }
+        }, 80)
 
 
-        val iObserver = object : DisposableObserver<Any>() {
-            override fun onComplete() {
-                TODO("Not yet implemented")
-            }
 
-            override fun onNext(t: Any) {
-                Log.e(TAG, t.toString())
-            }
 
-            override fun onError(e: Throwable) {
-                TODO("Not yet implemented")
-            }
 
-        }
-
-        observable.subscribe(iObserver)
 
     }
 
