@@ -5,13 +5,11 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.jakewharton.rxbinding2.widget.RxTextView
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.BackpressureStrategy
+import io.reactivex.Flowable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.activity_main.*
-import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 private val disposeBag = CompositeDisposable()
@@ -21,23 +19,43 @@ private val disposeBag = CompositeDisposable()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val list = Observable.just("one", "two", "three", "four", "five")
+        val bool1 = Flowable.just(false, false, false, false, true, true)
+        val bool2 = Flowable.just(true, false, false, true, false, false)
 
-//        val disposes = Observable.just(list)
-//            .flatMapIterable { it }
-//            .scan { t1: String?, t2: String? -> "$t1, $t2"}
-//            .subscribeOn(Schedulers.newThread())
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe({})
+        val num = Flowable.just(1, 23, 4, 5, 6, 7, 8)
 
-       RxTextView.textChanges(editText)
-           .debounce(300, TimeUnit.MILLISECONDS)
-           .skip(3)
-           .subscribe { Log.e("TAG", it.toString()) }
+
+        bool1.withLatestFrom(bool2, BiFunction<Boolean, Boolean, Boolean> { t1, t2 -> t1 && t2 })
+            .doAfterNext { voidFun() }.onErrorReturnItem(false)
+            .switchMap { item -> return@switchMap if (item) {
+                    Flowable.create({ sub ->
+                        num.filter { number -> number % 2 == 0 }.take(1)
+                            .subscribeOn(Schedulers.computation())
+                            .map { (1.0 / it).toString() }.subscribe(
+                                {
+                                    sub.onNext(it)
+                                }, { error ->
+                                    Log.e("TAG", error.localizedMessage)
+                                })
+                    }, BackpressureStrategy.MISSING)
+                } else Flowable.just("") }
+            .observeOn(Schedulers.newThread())
+            .doOnNext {
+                println("Ура ${Thread.currentThread().name}")
+            }
+            .subscribeOn(Schedulers.io())
+            .subscribe { }
+
     }
 
     override fun onDestroy() {
         super.onDestroy()
         disposeBag.clear()
     }
+
+    fun voidFun() {}
 }
+
+
+
+
