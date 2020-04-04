@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
@@ -21,10 +22,10 @@ class MainActivity : AppCompatActivity() {
 
 
         // TODO Возвращать стрим в метод
-        val bool1 = Flowable.just(false, false, false, false, true, true)
-        val bool2 = Flowable.just(true, false, false, true, false, false)
+        val bool1 = Observable.just(false, false, false, false, true, true)
+        val bool2 = Observable.just(true, false, false, true, false, false)
 
-        val num = Flowable.just(1, 23, 4, 5, 6, 7, 8)
+        val num = Observable.just(2, 2, 2, 5, 6, 7, 8)
 
 
         bool1.withLatestFrom(bool2, BiFunction<Boolean, Boolean, Boolean> { t1, t2 -> t1 && t2 })
@@ -32,20 +33,26 @@ class MainActivity : AppCompatActivity() {
             .onErrorReturnItem(false)
             .switchMap { item ->
                 return@switchMap if (item) {
-                    num.takeUntil{0 == it % 2}
+                    Observable.create{ sub ->
+                        num.takeUntil{0 == it % 2}.take(1)
                         .subscribeOn(Schedulers.computation())
                         .map { "${1.0 / it}" }
-
-                } else {Flowable.just("")} }
+                            .subscribe({
+                                Log.i("TAG", it)
+                            },{
+                                Log.e("TAG", it.localizedMessage)
+                            })
+                    }
+                } else {Observable.just("")} }
             .observeOn(Schedulers.newThread())
             .doOnNext {
-                println("Ура ${Thread.currentThread().name}")
+                Log.i("TAG", "Ура ${Thread.currentThread().name}")
             }
             .subscribeOn(Schedulers.io())
             .subscribe ({
-                println(it)
+                Log.i("TAG", it)
             },{
-                println(it.printStackTrace())
+                Log.e("TAG", it.localizedMessage)
             })
 
     }
